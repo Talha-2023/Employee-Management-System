@@ -2,11 +2,15 @@ import React, { useState } from "react";
 import { FaUser, FaLock, FaCheckCircle } from "react-icons/fa";
 import { GrFormView, GrFormViewHide } from "react-icons/gr";
 import axios from "axios";
+import { useAuth } from "../context/AuthContextProvider";
+import { useNavigate } from "react-router-dom";
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState(null);
+  const { login } = useAuth();
+  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -15,9 +19,22 @@ const Login = () => {
         "http://localhost:5000/api/auth/login",
         { email, password }
       );
-      console.log(response);
+      if (response.data.success) {
+        login(response.data.user);
+        localStorage.setItem("token", response.data.token);
+        if (response.data.user.role === "admin") {
+          navigate("/admin-dashboard");
+        } else {
+          navigate("/employee-dashboard");
+        }
+        setError(null);
+      }
     } catch (error) {
-      console.log(error);
+      if (error.response && !error.response.data.success) {
+        setError(error.response.data.error);
+      } else {
+        setError("Server Error! Try After Some Time");
+      }
     }
   };
 
@@ -32,7 +49,7 @@ const Login = () => {
         <h2 className="font-poppins text-3xl font-bold  text-left  mb-3">
           Login
         </h2>
-        <p className="mb-10 font-poppins text-sm flex">
+        <p className="mb-7 font-poppins text-sm flex">
           Hi, Welcome Back
           <span>
             <img src="hand.gif" alt="" className="w-10 -mt-3 " />
